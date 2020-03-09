@@ -1,0 +1,6 @@
+**READ THIS MESSAGE CAREFULLY BEFORE PROCEEDING.**
+You are using highly experimental software, which may include bugs. The author of this software makes zero guarantees about the correctness of this decompression model and the dive profile that it has generated. Understand that you should be trained in mixed-gas, decompression diving before attempting to use this tool.
+
+This piece of software is licensed to you under the MIT License.
+
+If you agree to the license that this dive planner is licensed under, and fully understand the messages above, then reply to this message with a :+1: as confirmation.
