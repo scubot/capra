@@ -13,11 +13,11 @@ from tinydb import TinyDB, Query
 class Capra(commands.Cog):
 
     def __init__(self, bot):
-        self.version = "0.1.0"
+        self.version = "1.0.0"
         self.bot: Bot = bot
         self.db: TinyDB = TinyDB('./modules/databases/capra')
-        self.executable_path = "/home/emerald/scubot/modules/capra/capra-singleplanner"
-        self.disclaimer_path = "/home/emerald/scubot/modules/capra/disclaimer.txt"
+        self.executable_path = "modules/capra/capra-singleplanner"
+        self.disclaimer_path = "scubot/modules/capra/disclaimer.txt"
 
     async def run_dive_planner(self, json_input: str):
         b_json_input = str.encode(json_input)
@@ -27,7 +27,6 @@ class Capra(commands.Cog):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout = "".encode()
-        stderr = "".encode()
         try:
             stdout, stderr = await asyncio.wait_for(proc.communicate(input=b_json_input), timeout=15)
         except asyncio.TimeoutError:
