@@ -51,7 +51,7 @@ class Capra(commands.Cog):
         deco_gases = []
         data = re.findall(r"(D:\d+, \d+, \d+/\d+)+[ ]*(G:.+)*", user_input)
         for section in data:
-            if section[0] == '':  # Deco
+            if section[1] != '':  # Deco
                 deco_match = re.findall(r"(G:)*(.+?)(?:,\s*|$)", section[1])
                 for gas_string in deco_match:
                     gas = gas_string[1].split('/')
@@ -59,7 +59,7 @@ class Capra(commands.Cog):
                         "o2": int(gas[0]) / 100,
                         "he": int(gas[1]) / 100
                     })
-            else:  # Dive segment
+            if section[0] != '':  # Dive segment
                 depth, time, mix = re.findall(r"D:(\d+), (\d+), (\d+/\d+)", section[0])[0]
                 mix = mix.split('/')
                 segments.append(
