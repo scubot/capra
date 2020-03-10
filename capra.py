@@ -2,9 +2,10 @@ import asyncio
 import json
 import re
 from asyncio.subprocess import PIPE
+from io import BytesIO
 from typing import Dict
-from subprocess import STDOUT, check_output
 
+import discord
 from discord.ext import commands
 from discord.ext.commands import Bot
 from tinydb import TinyDB, Query
@@ -96,9 +97,16 @@ class Capra(commands.Cog):
             await ctx.send(return_string)
         else:
             if len(stdout) > 1000:
-                await ctx.send("way too long bro")  # TODO: Replace with file uploading
+                return_string = f'Powered by Capra: https://github.com/the-emerald/capra\n' \
+                                f'WARNING: DIVE PLAN MAY BE INACCURATE AND MAY CONTAIN ERRORS THAT COULD LEAD ' \
+                                f'TO INJURY OR DEATH.\n\n' \
+                                f'{stdout}'
+                await ctx.send(content=f"{ctx.author.mention}", file=discord.File(BytesIO(return_string.encode()),
+                                                                                  filename="plan.txt"))
+
             else:
-                return_string = f'Powered by Capra 🐐 \n' \
+                return_string = f'{ctx.author.mention}\n' \
+                                f'Powered by Capra 🐐 \n' \
                                 f'**Warning: Dive plan may be inaccurate and may contain errors that could lead ' \
                                 f'to injury or death.**\n\n' \
                                 f'{stdout}'
