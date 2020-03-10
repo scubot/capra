@@ -17,7 +17,7 @@ class Capra(commands.Cog):
         self.bot: Bot = bot
         self.db: TinyDB = TinyDB('./modules/databases/capra')
         self.executable_path = "modules/capra/capra-singleplanner"
-        self.disclaimer_path = "scubot/modules/capra/disclaimer.txt"
+        self.disclaimer_path = "modules/capra/disclaimer.txt"
 
     async def run_dive_planner(self, json_input: str):
         b_json_input = str.encode(json_input)
@@ -127,10 +127,12 @@ class Capra(commands.Cog):
         disclaimer_text = f.read()
         f.close()
 
-        def check(reaction, user):
-            return user == ctx.message.author and str(reaction.emoji) == '👍'
+        disclaimer_message = await ctx.send(disclaimer_text)
 
-        await ctx.send(disclaimer_text)
+        def check(reaction, user):
+            return user == ctx.message.author and str(reaction.emoji) == '👍'\
+                   and reaction.message.id == disclaimer_message.id
+
         try:
             await self.bot.wait_for('reaction_add', timeout=60, check=check)
         except asyncio.TimeoutError:
