@@ -4,6 +4,7 @@ import re
 from asyncio.subprocess import PIPE
 from io import BytesIO
 from typing import Dict
+from subprocess import STDOUT, check_output
 
 import discord
 from discord.ext import commands
@@ -124,7 +125,7 @@ class Capra(commands.Cog):
         )
         await ctx.send("[:ok_hand:] User profile updated.")
 
-    @plan.command(name="disclaim")
+    @plan.command(name="disclaimer")
     async def disclaimer(self, ctx):  # Show and read disclaimer
         try:
             f = open(self.disclaimer_path, mode='r')
@@ -135,7 +136,7 @@ class Capra(commands.Cog):
         disclaimer_text = f.read()
         f.close()
 
-        disclaimer_message = await ctx.send(disclaimer_text)
+        disclaimer_message = await ctx.author.send(disclaimer_text)
 
         def check(reaction, user):
             return user == ctx.message.author and str(reaction.emoji) == '👍'\
@@ -151,7 +152,7 @@ class Capra(commands.Cog):
             table.upsert({
                 'userid': ctx.message.author.id
             }, target.userid == ctx.message.author.id)
-            await ctx.send("[:ok_hand:] You have accepted the disclaimer, and can now use the dive planner.")
+            await ctx.author.send("[:ok_hand:] You have accepted the disclaimer, and can now use the dive planner.")
 
 
 def setup(bot):
