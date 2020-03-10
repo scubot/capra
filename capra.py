@@ -1,6 +1,9 @@
 import asyncio
 import json
 import re
+from asyncio.subprocess import PIPE
+from typing import Dict
+from subprocess import STDOUT, check_output
 
 from discord.ext import commands
 from discord.ext.commands import Bot
@@ -15,19 +18,40 @@ class Capra(commands.Cog):
         self.db: TinyDB = TinyDB('./modules/databases/capra')
         # ---
 
+    @staticmethod
+    async def run_dive_planner(json_input: str):  # (stdin, stdout)
+        path = "/home/emerald/scubot/modules/capra/capra-singleplanner"
+        b_json_input = str.encode(json_input)
+        proc = await asyncio.create_subprocess_shell(
+            path,
+            stdin=PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+
+        # await proc.communicate(input=b_json_input)
+        stdout = "".encode()
+        stderr = "".encode()
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(input=b_json_input), timeout=15)
+        except asyncio.TimeoutError:
+            stderr = str.encode("Timed out.")
+        return stdout, stderr
+
     def check_disclaimer(self, userid: int) -> bool:
         table = self.db.table('disclaimer')
         target_user = Query()
         return bool(table.get(target_user.userid == userid))
 
-    def check_user_profile(self, userid: int) -> bool:
-        pass
+    def check_user_profile(self, userid: int) -> Dict:
+        table = self.db.table('profile')
+        target = Query()
+        return table.get(target.userid == userid)
 
     @staticmethod
     def generate_json(gfl: int, gfh: int, asc: int, desc: int, user_input: str) -> str:
         segments = []
         deco_gases = []
-        data = re.findall(r"(D:[\d]+, [\d]+, [\d]+/[\d]+)* |(G:.+)", user_input)
+        data = re.findall(r"(D:[\d]+, [\d]+, [\d]+/[\d]+)+[ ]*(G:.+)*", user_input)
         for section in data:
             if section[0] == '':  # Deco
                 deco_match = re.findall(r"(G:)*(.+?)(?:,\s*|$)", section[1])
@@ -54,37 +78,52 @@ class Capra(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def plan(self, ctx, *, dive_plan: str):  # Plan a dive
-        if not self.check_disclaimer(ctx.author.id):
+        if not self.check_disclaimer(ctx.message.author.id):
             await ctx.send("[!] You have not read and agreed to the disclaimer. Use help command for more information.")
             return
-        if not self.check_user_profile(ctx.author.id):
+        profile = self.check_user_profile(ctx.message.author.id)
+        if not profile:
             await ctx.send("[!] Set a dive profile before planning a dive!")
             return
-        json_string = self.generate_json(0, 0, 0, 0, dive_plan)  # TODO: Fetch GFL/H/ and Asc/Desc rates from DB
-        # TODO: Send to executable
-        # TODO: Receive output as stdin
-        # TODO: Return output or upload as file
 
-    @plan.command(name='reset')
-    async def reset(self):
-        pass
+        json_string = self.generate_json(profile["gfl"], profile["gfh"], profile["asc"], profile["desc"],
+                                         dive_plan)
+
+        stdout, stderr = await self.run_dive_planner(json_string)
+
+        stdout = stdout.decode()
+        stderr = stderr.decode()
+
+        if len(stderr) != 0:
+            return_string = f'[!] An error occurred inside the dive planner. \n' \
+                            f'```{stderr}```'
+            await ctx.send(return_string)
+        else:
+            if len(stdout) > 1000:
+                await ctx.send("way too long bro")  # TODO: Replace with file uploading
+            else:
+                return_string = f'Powered by Capra 🐐 \n' \
+                                f'**Warning: Dive plan may be inaccurate and may contain errors that could lead ' \
+                                f'to injury or death.**\n\n' \
+                                f'{stdout}'
+                await ctx.send(return_string)
 
     @plan.command(name="set")
     async def setprofile(self, ctx, ascent_rate: int, descent_rate: int, gf_low: int, gf_high: int):  # Set a profile
-        if not self.check_disclaimer(ctx.author):
+        if not self.check_disclaimer(ctx.message.author.id):
             await ctx.send("[!] You have not read and agreed to the disclaimer. Use help command for more information.")
         table = self.db.table('profile')
         target = Query()
         table.upsert(
-            {'userid': ctx.author.id, 'asc': ascent_rate, 'desc': descent_rate, 'gfl': gf_low, 'gfh': gf_high},
-            target.userid == ctx.author.id
+            {'userid': ctx.message.author.id, 'asc': ascent_rate, 'desc': descent_rate, 'gfl': gf_low, 'gfh': gf_high},
+            target.userid == ctx.message.author.id
         )
         await ctx.send("[:ok_hand:] User profile updated.")
 
     @plan.command(name="disclaim")
     async def disclaimer(self, ctx):  # Show and read disclaimer
         try:
-            f = open('disclaimer.txt', mode='r')
+            f = open('/home/emerald/scubot/modules/capra/disclaimer.txt', mode='r')
         except FileNotFoundError:
             await ctx.send("[!] Disclaimer file not found. Please complain to a dev about this.")
             return
@@ -97,12 +136,16 @@ class Capra(commands.Cog):
 
         await ctx.send(disclaimer_text)
         try:
-            await self.bot.wait_for('reaction-add', timeout=60, check=check)
+            await self.bot.wait_for('reaction_add', timeout=60, check=check)
         except asyncio.TimeoutError:
             return  # Received nothing. Time out
         else:
+            table = self.db.table('disclaimer')
+            target = Query()
+            table.upsert({
+                'userid': ctx.message.author.id
+            }, target.userid == ctx.message.author.id)
             await ctx.send("[:ok_hand:] You have accepted the disclaimer, and can now use the dive planner.")
-            # TODO: Add TinyDB update
 
 
 def setup(bot):
