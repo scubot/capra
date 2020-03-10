@@ -16,19 +16,16 @@ class Capra(commands.Cog):
         self.version = "0.1.0"
         self.bot: Bot = bot
         self.db: TinyDB = TinyDB('./modules/databases/capra')
-        # ---
+        self.executable_path = "/home/emerald/scubot/modules/capra/capra-singleplanner"
+        self.disclaimer_path = "/home/emerald/scubot/modules/capra/disclaimer.txt"
 
-    @staticmethod
-    async def run_dive_planner(json_input: str):  # (stdin, stdout)
-        path = "/home/emerald/scubot/modules/capra/capra-singleplanner"
+    async def run_dive_planner(self, json_input: str):
         b_json_input = str.encode(json_input)
         proc = await asyncio.create_subprocess_shell(
-            path,
+            self.executable_path,
             stdin=PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
-
-        # await proc.communicate(input=b_json_input)
         stdout = "".encode()
         stderr = "".encode()
         try:
@@ -51,7 +48,7 @@ class Capra(commands.Cog):
     def generate_json(gfl: int, gfh: int, asc: int, desc: int, user_input: str) -> str:
         segments = []
         deco_gases = []
-        data = re.findall(r"(D:[\d]+, [\d]+, [\d]+/[\d]+)+[ ]*(G:.+)*", user_input)
+        data = re.findall(r"(D:\d+, \d+, \d+/\d+)+[ ]*(G:.+)*", user_input)
         for section in data:
             if section[0] == '':  # Deco
                 deco_match = re.findall(r"(G:)*(.+?)(?:,\s*|$)", section[1])
@@ -62,7 +59,7 @@ class Capra(commands.Cog):
                         "he": int(gas[1]) / 100
                     })
             else:  # Dive segment
-                depth, time, mix = re.findall(r"D:([\d]+), ([\d]+), ([\d]+/[\d]+)", section[0])[0]
+                depth, time, mix = re.findall(r"D:(\d+), (\d+), (\d+/\d+)", section[0])[0]
                 mix = mix.split('/')
                 segments.append(
                     {
@@ -123,7 +120,7 @@ class Capra(commands.Cog):
     @plan.command(name="disclaim")
     async def disclaimer(self, ctx):  # Show and read disclaimer
         try:
-            f = open('/home/emerald/scubot/modules/capra/disclaimer.txt', mode='r')
+            f = open(self.disclaimer_path, mode='r')
         except FileNotFoundError:
             await ctx.send("[!] Disclaimer file not found. Please complain to a dev about this.")
             return
