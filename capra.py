@@ -140,7 +140,7 @@ class Capra(commands.Cog):
         disclaimer_message = await ctx.author.send(disclaimer_text)
 
         def check(reaction, user):
-            return user == ctx.message.author and str(reaction.emoji) == '👍'\
+            return user == ctx.message.author and str(reaction.emoji) == '👌'\
                    and reaction.message.id == disclaimer_message.id
 
         try:
