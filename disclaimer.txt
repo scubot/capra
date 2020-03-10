@@ -3,4 +3,4 @@ You are using highly experimental software, which may include bugs. The author o
 
 This piece of software is licensed to you under the MIT License.
 
-If you agree to the license that this dive planner is licensed under, and fully understand the messages above, then reply to this message with a :+1: as confirmation.
+If you agree to the license that this dive planner is licensed under, and fully understand the messages above, then _react_ to this message with the OK signal as confirmation.

@@ -117,6 +117,7 @@ class Capra(commands.Cog):
     async def setprofile(self, ctx, ascent_rate: int, descent_rate: int, gf_low: int, gf_high: int):  # Set a profile
         if not self.check_disclaimer(ctx.message.author.id):
             await ctx.send("[!] You have not read and agreed to the disclaimer. Use help command for more information.")
+            return
         table = self.db.table('profile')
         target = Query()
         table.upsert(
