@@ -13,7 +13,7 @@ from tinydb import TinyDB, Query
 class Capra(commands.Cog):
 
     def __init__(self, bot):
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.bot: Bot = bot
         self.db: TinyDB = TinyDB('./modules/databases/capra')
         self.executable_path = "modules/capra/capra-singleplanner"
