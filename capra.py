@@ -27,12 +27,16 @@ class Capra(commands.Cog):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout = "".encode()
+        stderr = "".encode()
         try:
             stdout, stderr = await asyncio.wait_for(proc.communicate(input=b_json_input), timeout=15)
         except asyncio.TimeoutError:
             stderr = str.encode("Timed out.")
         finally:
-            proc.kill()
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
         return stdout, stderr
 
     def check_disclaimer(self, userid: int) -> bool:
