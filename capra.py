@@ -1,10 +1,8 @@
 import asyncio
 import json
 import re
-from asyncio.subprocess import PIPE
 from io import BytesIO
 from typing import Dict
-from subprocess import STDOUT, check_output
 
 import discord
 from discord.ext import commands
@@ -25,7 +23,7 @@ class Capra(commands.Cog):
         b_json_input = str.encode(json_input)
         proc = await asyncio.create_subprocess_shell(
             self.executable_path,
-            stdin=PIPE,
+            stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout = "".encode()
@@ -33,6 +31,8 @@ class Capra(commands.Cog):
             stdout, stderr = await asyncio.wait_for(proc.communicate(input=b_json_input), timeout=15)
         except asyncio.TimeoutError:
             stderr = str.encode("Timed out.")
+        finally:
+            proc.kill()
         return stdout, stderr
 
     def check_disclaimer(self, userid: int) -> bool:
@@ -140,7 +140,7 @@ class Capra(commands.Cog):
         disclaimer_message = await ctx.author.send(disclaimer_text)
 
         def check(reaction, user):
-            return user == ctx.message.author and str(reaction.emoji) == '👌'\
+            return user == ctx.message.author and str(reaction.emoji) == '👌' \
                    and reaction.message.id == disclaimer_message.id
 
         try:
