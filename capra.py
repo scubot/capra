@@ -13,7 +13,7 @@ from tinydb import TinyDB, Query
 class Capra(commands.Cog):
 
     def __init__(self, bot):
-        self.version = "1.0.1"
+        self.version = "2.0.0"
         self.bot: Bot = bot
         self.db: TinyDB = TinyDB('./modules/databases/capra')
         self.executable_path = "modules/capra/capra-singleplanner"
@@ -50,7 +50,7 @@ class Capra(commands.Cog):
         return table.get(target.userid == userid)
 
     @staticmethod
-    def generate_json(gfl: int, gfh: int, asc: int, desc: int, user_input: str) -> str:
+    def generate_json(gfl: int, gfh: int, asc: int, desc: int, bottom_sac: int, deco_sac: int, user_input: str) -> str:
         segments = []
         deco_gases = []
         data = re.findall(r"(D:\d+, \d+, \d+/\d+)+[ ]*(G:.+)*", user_input)
@@ -76,7 +76,7 @@ class Capra(commands.Cog):
                 )
 
         return json.dumps({'gfl': gfl, 'gfh': gfh, 'asc': asc, 'desc': desc, 'segments': segments,
-                           'deco_gases': deco_gases})
+                           'bottom_sac': bottom_sac, 'deco_sac': deco_sac, 'deco_gases': deco_gases})
 
     @commands.group(invoke_without_command=True)
     async def plan(self, ctx, *, dive_plan: str):  # Plan a dive
@@ -89,7 +89,7 @@ class Capra(commands.Cog):
             return
 
         json_string = self.generate_json(profile["gfl"], profile["gfh"], profile["asc"], profile["desc"],
-                                         dive_plan)
+                                         profile['bottom_sac'], profile['deco_sac'], dive_plan)
 
         stdout, stderr = await self.run_dive_planner(json_string)
 
@@ -114,18 +114,20 @@ class Capra(commands.Cog):
                                 f'Powered by Capra 🐐 \n' \
                                 f'**Warning: Dive plan may be inaccurate and may contain errors that could lead ' \
                                 f'to injury or death.**\n\n' \
-                                f'{stdout}'
+                                f'```{stdout}```'
                 await ctx.send(return_string)
 
     @plan.command(name="set")
-    async def setprofile(self, ctx, ascent_rate: int, descent_rate: int, gf_low: int, gf_high: int):  # Set a profile
+    async def setprofile(self, ctx, ascent_rate: int, descent_rate: int, gf_low: int, gf_high: int, bottom_sac: int,
+                         deco_sac: int):  # Set a profile
         if not self.check_disclaimer(ctx.message.author.id):
             await ctx.send("[!] You have not read and agreed to the disclaimer. Use help command for more information.")
             return
         table = self.db.table('profile')
         target = Query()
         table.upsert(
-            {'userid': ctx.message.author.id, 'asc': ascent_rate, 'desc': descent_rate, 'gfl': gf_low, 'gfh': gf_high},
+            {'userid': ctx.message.author.id, 'asc': ascent_rate, 'desc': descent_rate, 'gfl': gf_low, 'gfh': gf_high,
+             'bottom_sac': bottom_sac, 'deco_sac': deco_sac},
             target.userid == ctx.message.author.id
         )
         await ctx.send("[:ok_hand:] User profile updated.")
