@@ -21,7 +21,7 @@ class Capra(commands.Cog):
 
     async def run_dive_planner(self, json_input: str):
         b_json_input = str.encode(json_input)
-        proc = await asyncio.create_subprocess_shell(
+        proc = await asyncio.create_subprocess_exec(
             self.executable_path,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
@@ -108,7 +108,6 @@ class Capra(commands.Cog):
                                 f'{stdout}'
                 await ctx.send(content=f"{ctx.author.mention}", file=discord.File(BytesIO(return_string.encode()),
                                                                                   filename="plan.txt"))
-
             else:
                 return_string = f'{ctx.author.mention}\n' \
                                 f'Powered by Capra 🐐 \n' \
